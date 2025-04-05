@@ -1,4 +1,3 @@
-// api/parser.js
 import { JSDOM } from 'jsdom';
 
 export default async function handler(req, res) {
@@ -9,23 +8,27 @@ export default async function handler(req, res) {
   }
 
   try {
-    const url = `https://placafipe.com/placa/${placa}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      return res.status(500).json({ erro: 'Erro ao acessar o site' });
-    }
-
+    const response = await fetch(`https://placafipe.com/placa/${placa}`);
     const html = await response.text();
+
     const dom = new JSDOM(html);
     const document = dom.window.document;
 
-    const modelo = document.querySelector('td:contains("Modelo") + td')?.textContent.trim();
-    const cor = document.querySelector('td:contains("Cor") + td')?.textContent.trim();
-    const ano = document.querySelector('td:contains("Ano") + td')?.textContent.trim();
+    const rows = document.querySelectorAll('table tbody tr');
+    const data = {};
 
-    res.status(200).json({ placa, modelo, cor, ano });
+    rows.forEach((row) => {
+      const tds = row.querySelectorAll('td');
+      if (tds.length === 2) {
+        const label = tds[0].textContent.trim();
+        const value = tds[1].textContent.trim();
+        data[label] = value;
+      }
+    });
+
+    res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({ erro: 'Erro ao processar a requisição' });
+    console.error('Erro:', error);
+    res.status(500).json({ erro: 'Erro ao acessar a página' });
   }
 }

@@ -1,0 +1,8 @@
+{
+  "name": "placa-parser",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "jsdom": "^24.0.0"
+  }
+}

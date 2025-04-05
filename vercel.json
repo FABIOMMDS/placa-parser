@@ -1,9 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "api/parser.js", "use": "@vercel/node" }
-  ],
-  "routes": [
-    { "src": "/api/parser", "dest": "api/parser.js" }
-  ]
+  "functions": {
+    "api/parser.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
 }
