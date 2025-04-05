@@ -1,34 +1,30 @@
-import { JSDOM } from 'jsdom';
+import fetch from 'node-fetch';
+import * as cheerio from 'cheerio';
 
 export default async function handler(req, res) {
   const { placa } = req.query;
 
   if (!placa) {
-    return res.status(400).json({ erro: 'Placa não informada' });
+    return res.status(400).json({ erro: 'Placa não fornecida' });
   }
 
+  const url = `https://placafipe.com/placa/${placa}`;
+
   try {
-    const response = await fetch(`https://placafipe.com/placa/${placa}`);
+    const response = await fetch(url);
     const html = await response.text();
 
-    const dom = new JSDOM(html);
-    const document = dom.window.document;
+    const $ = cheerio.load(html);
+    const result = {};
 
-    const rows = document.querySelectorAll('table tbody tr');
-    const data = {};
-
-    rows.forEach((row) => {
-      const tds = row.querySelectorAll('td');
-      if (tds.length === 2) {
-        const label = tds[0].textContent.trim();
-        const value = tds[1].textContent.trim();
-        data[label] = value;
-      }
+    $('table tr').each((i, row) => {
+      const th = $(row).find('th').text().trim();
+      const td = $(row).find('td').text().trim();
+      if (th && td) result[th] = td;
     });
 
-    res.status(200).json(data);
+    res.status(200).json(result);
   } catch (error) {
-    console.error('Erro:', error);
     res.status(500).json({ erro: 'Erro ao acessar a página' });
   }
 }
