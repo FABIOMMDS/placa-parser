@@ -1,43 +1,31 @@
 // api/parser.js
-const axios = require('axios');
-const cheerio = require('cheerio');
+import { JSDOM } from 'jsdom';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const { placa } = req.query;
 
   if (!placa) {
     return res.status(400).json({ erro: 'Placa não informada' });
   }
 
-  const url = `https://placafipe.com/placa/${placa}`;
-
   try {
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
-      },
-    });
+    const url = `https://placafipe.com/placa/${placa}`;
+    const response = await fetch(url);
 
-    const $ = cheerio.load(response.data);
-    const tabela = $('.table').first();
-
-    if (tabela.length === 0) {
-      return res.status(404).json({ erro: 'Dados não encontrados para esta placa' });
+    if (!response.ok) {
+      return res.status(500).json({ erro: 'Erro ao acessar o site' });
     }
 
-    const dados = {};
-    tabela.find('tr').each((i, el) => {
-      const chave = $(el).find('th').text().trim();
-      const valor = $(el).find('td').text().trim();
-      if (chave && valor) {
-        dados[chave] = valor;
-      }
-    });
+    const html = await response.text();
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
 
-    res.status(200).json(dados);
+    const modelo = document.querySelector('td:contains("Modelo") + td')?.textContent.trim();
+    const cor = document.querySelector('td:contains("Cor") + td')?.textContent.trim();
+    const ano = document.querySelector('td:contains("Ano") + td')?.textContent.trim();
+
+    res.status(200).json({ placa, modelo, cor, ano });
   } catch (error) {
-    console.error('Erro ao acessar:', error.message);
-    res.status(500).json({ erro: 'Não foi possível acessar a página' });
+    res.status(500).json({ erro: 'Erro ao processar a requisição' });
   }
-};
+}
