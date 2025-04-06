@@ -1,10 +1,17 @@
-const { getVehicleData } = require('./index');
+const consultarPlaca = require('./src/parser');
 
-const placa = 'AIS4A09'; // Substitua por uma placa válida
+const placa = process.argv[2];
 
-getVehicleData(placa).then(dados => {
-  console.log('Dados do veículo:');
-  console.log(dados);
-}).catch(err => {
-  console.error('Erro ao buscar dados:', err.message);
-});
+if (!placa) {
+  console.error('⚠️  Por favor, informe uma placa. Ex: node consulta.js ABC1234');
+  process.exit(1);
+}
+
+consultarPlaca(placa)
+  .then(dados => {
+    console.log('✅ Dados encontrados:\n');
+    console.log(JSON.stringify(dados, null, 2));
+  })
+  .catch(err => {
+    console.error('❌ Erro:', err.message);
+  });
